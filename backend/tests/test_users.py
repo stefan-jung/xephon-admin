@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 from httpx import AsyncClient
 
 _KC_USER = {
@@ -54,7 +55,9 @@ async def test_get_user(client: AsyncClient) -> None:
 
 async def test_get_user_not_found(client: AsyncClient) -> None:
     with patch("app.api.v1.users.kc") as kc:
-        kc.get_user = AsyncMock(side_effect=Exception("404 from keycloak"))
+        kc.get_user = AsyncMock(
+            side_effect=httpx.HTTPStatusError("404", request=MagicMock(), response=MagicMock())
+        )
         r = await client.get("/users/ghost-id")
     assert r.status_code == 404
 
