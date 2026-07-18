@@ -1,9 +1,17 @@
 from __future__ import annotations
 
+import pytest_asyncio
 from httpx import AsyncClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.audit_log import AuditLog
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def _clean_audit_log(db_session: AsyncSession) -> None:
+    await db_session.execute(text("DELETE FROM audit_log"))
+    await db_session.flush()
 
 
 async def _seed(session: AsyncSession, **kwargs: object) -> AuditLog:

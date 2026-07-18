@@ -65,7 +65,7 @@ async def test_get_user_not_found(client: AsyncClient) -> None:
 async def test_invite_user(client: AsyncClient) -> None:
     with (
         patch("app.api.v1.users.kc") as kc,
-        patch("app.db.session.AsyncSessionLocal", _mock_sl()),
+        patch("app.api.v1.users.AsyncSessionLocal", _mock_sl()),
     ):
         kc.create_user = AsyncMock(return_value="user-uuid-1")
         kc.send_invite = AsyncMock()
@@ -89,7 +89,7 @@ async def test_update_user(client: AsyncClient) -> None:
     updated = {**_KC_USER, "firstName": "Jane"}
     with (
         patch("app.api.v1.users.kc") as kc,
-        patch("app.db.session.AsyncSessionLocal", _mock_sl()),
+        patch("app.api.v1.users.AsyncSessionLocal", _mock_sl()),
     ):
         kc.update_user = AsyncMock()
         kc.get_user = AsyncMock(return_value=updated)
@@ -106,7 +106,7 @@ async def test_update_user_no_fields_returns_400(client: AsyncClient) -> None:
 async def test_disable_user(client: AsyncClient) -> None:
     with (
         patch("app.api.v1.users.kc") as kc,
-        patch("app.db.session.AsyncSessionLocal", _mock_sl()),
+        patch("app.api.v1.users.AsyncSessionLocal", _mock_sl()),
     ):
         kc.get_user = AsyncMock(return_value=_KC_USER)
         kc.disable_user = AsyncMock()
@@ -117,7 +117,7 @@ async def test_disable_user(client: AsyncClient) -> None:
 async def test_enable_user(client: AsyncClient) -> None:
     with (
         patch("app.api.v1.users.kc") as kc,
-        patch("app.db.session.AsyncSessionLocal", _mock_sl()),
+        patch("app.api.v1.users.AsyncSessionLocal", _mock_sl()),
     ):
         kc.get_user = AsyncMock(return_value=_KC_USER)
         kc.enable_user = AsyncMock()
@@ -128,7 +128,7 @@ async def test_enable_user(client: AsyncClient) -> None:
 async def test_reset_password(client: AsyncClient) -> None:
     with (
         patch("app.api.v1.users.kc") as kc,
-        patch("app.db.session.AsyncSessionLocal", _mock_sl()),
+        patch("app.api.v1.users.AsyncSessionLocal", _mock_sl()),
     ):
         kc.get_user = AsyncMock(return_value=_KC_USER)
         kc.reset_password_email = AsyncMock()

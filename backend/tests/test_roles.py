@@ -70,7 +70,7 @@ async def test_get_user_roles_empty(client: AsyncClient) -> None:
 async def test_assign_role(client: AsyncClient) -> None:
     with (
         patch("app.api.v1.roles.kc") as kc,
-        patch("app.db.session.AsyncSessionLocal", _mock_sl()),
+        patch("app.api.v1.roles.AsyncSessionLocal", _mock_sl()),
     ):
         kc.assign_realm_role = AsyncMock()
         kc.get_user = AsyncMock(return_value=_KC_USER)
@@ -81,7 +81,7 @@ async def test_assign_role(client: AsyncClient) -> None:
 async def test_remove_role(client: AsyncClient) -> None:
     with (
         patch("app.api.v1.roles.kc") as kc,
-        patch("app.db.session.AsyncSessionLocal", _mock_sl()),
+        patch("app.api.v1.roles.AsyncSessionLocal", _mock_sl()),
     ):
         kc.remove_realm_role = AsyncMock()
         kc.get_user = AsyncMock(return_value=_KC_USER)
