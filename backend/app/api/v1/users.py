@@ -82,7 +82,7 @@ async def get_user(user_id: str, current_user: CurrentUser) -> UserRead:
     try:
         kc_user = await kc.get_user(user_id)
     except httpx.HTTPStatusError:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="User not found") from None
     return _to_user_read(kc_user)
 
 
