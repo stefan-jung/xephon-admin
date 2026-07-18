@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import CurrentUser
 from app.db.session import get_db
-from fastapi import Depends
 from app.models.audit_log import AuditLog
 from app.models.service import Service
 from app.schemas.service import ServiceCreate, ServiceRead, ServiceUpdate
@@ -40,12 +39,14 @@ async def create_service(
         roles=body.roles,
     )
     db.add(svc)
-    db.add(AuditLog(
-        actor_subject=current_user.sub,
-        actor_email=current_user.email,
-        action="service.create",
-        details={"slug": body.slug, "name": body.name},
-    ))
+    db.add(
+        AuditLog(
+            actor_subject=current_user.sub,
+            actor_email=current_user.email,
+            action="service.create",
+            details={"slug": body.slug, "name": body.name},
+        )
+    )
     await db.commit()
     await db.refresh(svc)
     return svc
@@ -76,12 +77,14 @@ async def update_service(
     patch = body.model_dump(exclude_none=True)
     for key, val in patch.items():
         setattr(svc, key, val)
-    db.add(AuditLog(
-        actor_subject=current_user.sub,
-        actor_email=current_user.email,
-        action="service.update",
-        details={"slug": slug, **patch},
-    ))
+    db.add(
+        AuditLog(
+            actor_subject=current_user.sub,
+            actor_email=current_user.email,
+            action="service.update",
+            details={"slug": slug, **patch},
+        )
+    )
     await db.commit()
     await db.refresh(svc)
     return svc
@@ -97,10 +100,12 @@ async def delete_service(
     if not svc:
         raise HTTPException(status_code=404, detail="Service not found")
     await db.delete(svc)
-    db.add(AuditLog(
-        actor_subject=current_user.sub,
-        actor_email=current_user.email,
-        action="service.delete",
-        details={"slug": slug},
-    ))
+    db.add(
+        AuditLog(
+            actor_subject=current_user.sub,
+            actor_email=current_user.email,
+            action="service.delete",
+            details={"slug": slug},
+        )
+    )
     await db.commit()

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { listAuditLog } from "../api/client";
-import type { AuditLogEntry, AuditLogPage } from "../api/types";
+import type { AuditLogEntry, AuditLogPage as AuditLogPageData } from "../api/types";
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("en", {
@@ -13,7 +13,7 @@ function fmtDate(iso: string) {
 }
 
 export function AuditLogPage() {
-  const [data, setData] = useState<AuditLogPage | null>(null);
+  const [data, setData] = useState<AuditLogPageData | null>(null);
   const [page, setPage] = useState(1);
   const [actionFilter, setActionFilter] = useState("");
   const [error, setError] = useState<string | null>(null);

@@ -45,7 +45,7 @@ async def get_current_user(
 ) -> TokenUser:
     token = creds.credentials
     try:
-        jwks = await _get_jwks()
+        await _get_jwks()
         signing_key = jwt.PyJWKClient(settings.keycloak_jwks_url).get_signing_key_from_jwt(token)
         payload = jwt.decode(
             token,

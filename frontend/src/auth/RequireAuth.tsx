@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { keycloak } from "./keycloak";
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
