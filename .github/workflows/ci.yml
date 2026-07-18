@@ -83,6 +83,13 @@ jobs:
             --title "Backend tests (Python ${{ matrix.python-version }})" \
             --coverage-xml coverage.xml >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.python-version }}
+          path: backend/test-results.xml
+
       - name: Dependency audit (pip-audit)
         working-directory: backend
         run: |
