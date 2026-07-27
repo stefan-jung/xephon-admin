@@ -36,9 +36,35 @@ corporate infrastructure.
 all deployed Xephon service instances.
 
 ### Instance & service registry
-- `Instance` model: id, name, type (saas | private | enterprise), base_url, enabled_services, health_status
-- CRUD API: `POST /api/v1/instances`, `GET`, `PATCH`, `DELETE`
-- Per-instance service record: cms_url, pm_url, pim_url, erp_url, ai_url
+- [x] **Done (2026-07-27):** `Instance` model (`app/models/instance.py`) — id
+      (server-generated UUID), name, type (plain string, Pydantic-validated
+      at the API boundary as `Literal["saas", "private", "enterprise"]` —
+      no DB-level enum, matching this codebase's existing style, e.g.
+      `Service` has no enum columns either), base_url, enabled_services
+      (JSONB list of strings), health_status (plain string, defaults
+      `"unknown"`). Per-instance service record fields (cms_url/pm_url/
+      pim_url/erp_url/ai_url, all nullable) live as columns on the same
+      row rather than a child table — a "record", not a one-to-many
+      relationship, per the roadmap's own wording. CRUD API mirrors
+      `services.py`'s exact shape (`POST/GET/GET one/PATCH/DELETE
+      /api/v1/instances`), audit-logged the same way (`instance.create`/
+      `.update`/`.delete`). 11 new tests (`tests/test_instances.py`), 46
+      total passing, clean ruff check/format. Confirmed live against the
+      real running dev server (401 without a token, same auth gate as
+      every other route). **Found and fixed a pre-existing gap along the
+      way:** `alembic/script.py.mako` didn't exist in this repo at all —
+      `alembic revision --autogenerate` couldn't generate *any* new
+      migration until it was added (matched to this repo's existing
+      migration's actual style, not alembic's raw default template).
+      **Not done:** health monitoring (the background poller, aggregated
+      status, and `/health/{id}/health` snapshot endpoint below) and the
+      frontend Instances dashboard — see their own sections, both
+      separately scoped and unstarted.
+
+### Health monitoring
+- Background job polls `/health/live` on every registered service every 30 s
+- Aggregated status stored (last checked, latency, up/down streak)
+- `GET /api/v1/instances/{id}/health` returns per-service health snapshot
 
 ### Health monitoring
 - Background job polls `/health/live` on every registered service every 30 s
