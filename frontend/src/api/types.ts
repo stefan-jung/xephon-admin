@@ -24,6 +24,22 @@ export interface Service {
   updated_at: string;
 }
 
+export interface Instance {
+  id: string;
+  name: string;
+  type: "saas" | "private" | "enterprise";
+  base_url: string;
+  enabled_services: string[];
+  health_status: string;
+  cms_url: string | null;
+  pm_url: string | null;
+  pim_url: string | null;
+  erp_url: string | null;
+  ai_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AuditLogEntry {
   id: string;
   actor_subject: string;

@@ -66,14 +66,26 @@ all deployed Xephon service instances.
 - Aggregated status stored (last checked, latency, up/down streak)
 - `GET /api/v1/instances/{id}/health` returns per-service health snapshot
 
-### Health monitoring
-- Background job polls `/health/live` on every registered service every 30 s
-- Aggregated status stored (last checked, latency, up/down streak)
-- `GET /api/v1/instances/{id}/health` returns per-service health snapshot
-
 ### Instances dashboard (frontend)
-- Card grid: instance name, type badge, service health tiles, last-seen timestamp
-- Click → Instance detail page (tabs: Overview | Logs | Config | Members)
+- [x] **Done (2026-07-28):** `InstancesPage.tsx` — list/create/edit/delete
+      for the Instance model above, mirroring `ServicesPage.tsx`'s exact
+      CRUD pattern (same card-per-row layout, inline edit forms, badge
+      styling) rather than a true multi-column "card grid." Shows type
+      and `health_status` badges and the five per-instance service URLs.
+      Wired into the nav bar and router. Verified: `tsc -b && vite build`
+      (matching CI's own build step) succeeds, lint clean, and a static
+      render of the page against the real compiled stylesheet looks
+      correct — full interactive click-through wasn't possible (no
+      stored Keycloak credentials in this environment, same limitation
+      noted throughout this family of repos' work).
+      **Not done, deliberately scoped out:** the click-through Instance
+      detail page with Overview/Logs/Config/Members tabs — "Logs" needs
+      Phase 3's container log streaming (unbuilt) and "Members" isn't a
+      concept that exists on `Instance` at all yet; building a detail
+      page around two not-yet-real features would mean inventing scope
+      rather than implementing what's actually decided. Health status is
+      shown as whatever's stored, not live-polled — see "Health
+      monitoring" above, still unstarted.
 
 ---
 

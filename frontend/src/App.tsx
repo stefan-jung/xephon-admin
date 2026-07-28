@@ -3,6 +3,7 @@ import { RequireAuth } from "./auth/RequireAuth";
 import { useCurrentUser } from "./auth/CurrentUserContext";
 import { keycloak } from "./auth/keycloak";
 import { AuditLogPage } from "./pages/AuditLogPage";
+import { InstancesPage } from "./pages/InstancesPage";
 import { ServicesPage } from "./pages/ServicesPage";
 import { UserPage } from "./pages/UserPage";
 import { UsersPage } from "./pages/UsersPage";
@@ -26,6 +27,12 @@ function Topbar() {
           className={({ isActive }) => `topbar-nav-link ${isActive ? "active" : ""}`}
         >
           Services
+        </NavLink>
+        <NavLink
+          to="/instances"
+          className={({ isActive }) => `topbar-nav-link ${isActive ? "active" : ""}`}
+        >
+          Instances
         </NavLink>
         <NavLink
           to="/audit"
@@ -57,6 +64,7 @@ export default function App() {
           <Route path="/users" element={<UsersPage />} />
           <Route path="/users/:userId" element={<UserPage />} />
           <Route path="/services" element={<ServicesPage />} />
+          <Route path="/instances" element={<InstancesPage />} />
           <Route path="/audit" element={<AuditLogPage />} />
         </Routes>
       </main>

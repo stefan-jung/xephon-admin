@@ -1,6 +1,6 @@
 import axios from "axios";
 import { keycloak } from "../auth/keycloak";
-import type { AuditLogPage, RealmRole, Service, User } from "./types";
+import type { AuditLogPage, Instance, RealmRole, Service, User } from "./types";
 
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8004/api/v1";
 
@@ -93,6 +93,51 @@ export async function updateService(
 
 export async function deleteService(slug: string): Promise<void> {
   await http.delete(`/services/${slug}`);
+}
+
+// ── Instances ─────────────────────────────────────────────────────────────────
+
+export async function listInstances(): Promise<Instance[]> {
+  return (await http.get<Instance[]>("/instances")).data;
+}
+
+export async function createInstance(payload: {
+  name: string;
+  type: "saas" | "private" | "enterprise";
+  base_url?: string;
+  enabled_services?: string[];
+  cms_url?: string;
+  pm_url?: string;
+  pim_url?: string;
+  erp_url?: string;
+  ai_url?: string;
+}): Promise<Instance> {
+  return (await http.post<Instance>("/instances", payload)).data;
+}
+
+export async function updateInstance(
+  id: string,
+  patch: Partial<
+    Pick<
+      Instance,
+      | "name"
+      | "type"
+      | "base_url"
+      | "enabled_services"
+      | "health_status"
+      | "cms_url"
+      | "pm_url"
+      | "pim_url"
+      | "erp_url"
+      | "ai_url"
+    >
+  >,
+): Promise<Instance> {
+  return (await http.patch<Instance>(`/instances/${id}`, patch)).data;
+}
+
+export async function deleteInstance(id: string): Promise<void> {
+  await http.delete(`/instances/${id}`);
 }
 
 // ── Audit log ─────────────────────────────────────────────────────────────────
