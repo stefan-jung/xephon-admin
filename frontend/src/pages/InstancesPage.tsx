@@ -66,11 +66,47 @@ function fromInstance(inst: Instance): FormState {
 }
 
 const HEALTH_BADGE: Record<string, string> = {
+  up: "badge-green",
   healthy: "badge-green",
   degraded: "badge-yellow",
   down: "badge-red",
   unknown: "badge-gray",
 };
+
+const SERVICE_LABELS: Record<string, string> = {
+  cms: "CMS",
+  pm: "PM",
+  pim: "PIM",
+  erp: "ERP",
+  ai: "AI",
+};
+
+function formatCheckedAt(iso: string): string {
+  return new Date(iso).toLocaleString();
+}
+
+function ServiceHealthBreakdown({ health }: { health: Instance["health"] }) {
+  const entries = Object.entries(health);
+  if (entries.length === 0) {
+    return <p className="text-gray-500 text-xs mt-2">No health data yet — waiting on the next poll.</p>;
+  }
+  return (
+    <div className="mt-2 space-y-1">
+      {entries.map(([service, entry]) => (
+        <div key={service} className="flex items-center gap-2 text-xs">
+          <span className={`badge ${HEALTH_BADGE[entry.status] ?? "badge-gray"}`}>
+            {SERVICE_LABELS[service] ?? service}: {entry.status}
+          </span>
+          <span className="text-gray-500">
+            streak {entry.streak}
+            {entry.latency_ms !== null ? ` · ${entry.latency_ms.toFixed(0)}ms` : ""} · checked{" "}
+            {formatCheckedAt(entry.checked_at)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function ServiceUrlFields({
   form,
@@ -104,6 +140,7 @@ export function InstancesPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [createForm, setCreateForm] = useState<FormState>(EMPTY_FORM);
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM);
+  const [expandedHealthId, setExpandedHealthId] = useState<string | null>(null);
 
   const load = () => {
     listInstances()
@@ -304,10 +341,20 @@ export function InstancesPage() {
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">{inst.name}</span>
                     <span className="badge badge-gray">{inst.type}</span>
-                    <span className={`badge ${HEALTH_BADGE[inst.health_status] ?? "badge-gray"}`}>
-                      {inst.health_status}
-                    </span>
+                    <button
+                      type="button"
+                      className={`badge ${HEALTH_BADGE[inst.health_status] ?? "badge-gray"}`}
+                      onClick={() =>
+                        setExpandedHealthId(expandedHealthId === inst.id ? null : inst.id)
+                      }
+                      title="Click to show per-service health"
+                    >
+                      {inst.health_status} {expandedHealthId === inst.id ? "▲" : "▼"}
+                    </button>
                   </div>
+                  {expandedHealthId === inst.id && (
+                    <ServiceHealthBreakdown health={inst.health} />
+                  )}
                   {inst.base_url && (
                     <p className="text-gray-500 text-xs font-mono">{inst.base_url}</p>
                   )}

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import httpx
 import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.services.health_poller import poll_once
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -115,3 +118,43 @@ async def test_delete_instance(client: AsyncClient) -> None:
 async def test_delete_instance_not_found(client: AsyncClient) -> None:
     r = await client.delete("/instances/00000000-0000-0000-0000-000000000000")
     assert r.status_code == 404
+
+
+async def test_get_instance_health_before_any_poll(client: AsyncClient) -> None:
+    created = (
+        await client.post("/instances", json={"name": "Never Polled", "type": "saas"})
+    ).json()
+    r = await client.get(f"/instances/{created['id']}/health")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["instance_id"] == created["id"]
+    assert data["health_status"] == "unknown"
+    assert data["services"] == {}
+
+
+async def test_get_instance_health_not_found(client: AsyncClient) -> None:
+    r = await client.get("/instances/00000000-0000-0000-0000-000000000000/health")
+    assert r.status_code == 404
+
+
+async def test_get_instance_health_reflects_a_poll(
+    client: AsyncClient, db_session: AsyncSession
+) -> None:
+    created = (
+        await client.post(
+            "/instances",
+            json={"name": "Polled", "type": "saas", "cms_url": "https://cms.example"},
+        )
+    ).json()
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as poll_client:
+        await poll_once(db_session, client=poll_client)
+
+    r = await client.get(f"/instances/{created['id']}/health")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["health_status"] == "up"
+    assert data["services"]["cms"]["status"] == "up"

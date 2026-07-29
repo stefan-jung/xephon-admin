@@ -62,9 +62,58 @@ all deployed Xephon service instances.
       separately scoped and unstarted.
 
 ### Health monitoring
-- Background job polls `/health/live` on every registered service every 30 s
-- Aggregated status stored (last checked, latency, up/down streak)
-- `GET /api/v1/instances/{id}/health` returns per-service health snapshot
+- [x] **Done (2026-07-29):** Background poller (`app/services/health_poller.py`)
+      started as an `asyncio.create_task` from a FastAPI `lifespan` context
+      manager in `main.py` (no new scheduler dependency), running `poll_once`
+      every 30 s (`POLL_INTERVAL_SECONDS`) until cancelled on shutdown.
+      `poll_once` walks every registered `Instance` and, for each configured
+      service URL (cms/pm/pim/erp/ai — a service with no URL set is skipped
+      entirely, not reported as down), does a `GET {base_url}/health/live`
+      with a 5 s timeout: 200 → `"up"`, anything else (non-200, timeout,
+      connection error) → `"down"`. Per-service snapshot (`status`,
+      `checked_at`, `latency_ms`, `streak`) is stored in a new
+      `Instance.health` JSONB column (`streak` increments on repeated status,
+      resets to 1 on a change); the existing `health_status` column is
+      derived from it (`"unknown"` if nothing configured, `"up"`/`"down"` if
+      uniform, `"degraded"` if mixed) and kept as the at-a-glance summary
+      field the Instances list already showed. New `GET
+      /api/v1/instances/{id}/health` route returns the full per-service
+      breakdown (`InstanceHealthRead`); `InstanceRead` itself also gained a
+      `health` field so the list/detail routes already carry it without a
+      second round-trip. 15 new tests (`test_health_poller.py` covering
+      up/down/timeout/connection-error/streak/degraded-mixed/skip-
+      unconfigured cases via `httpx.MockTransport` — no new test dependency
+      — plus 3 in `test_instances.py` for the new route), 61 total passing,
+      clean ruff/mypy-free (this repo has no mypy configured at all — only
+      xephon-cms/erp/pim do), migration round-trip verified.
+      **Cross-repo prerequisite fixed along the way:** the poller's honest
+      behavior (no `/health/live` response looks identical to "actually
+      down") meant xephon-cms and xephon-ai genuinely had no way to report
+      "up" — xephon-cms only exposed a plain `/health` (different shape,
+      no liveness/readiness split) and xephon-ai had no health endpoint at
+      all. Added `/health/live` (always 200) and `/health/ready` (DB
+      reachability via `SELECT 1`, 503 until up) to both, mirroring the
+      exact convention already established in xephon-pm/xephon-pim/xephon-erp
+      — xephon-cms kept its old `/health` alongside for backward
+      compatibility. Frontend (`InstancesPage.tsx`) gained a click-to-expand
+      per-service breakdown under each instance's health badge (status,
+      streak, latency, last-checked time) — see "Instances dashboard"
+      below. **Found and fixed a pre-existing, unrelated bug along the
+      way:** the `degraded` health badge referenced a `badge-yellow` CSS
+      class that was never defined (only `badge-green`/`badge-gray`/
+      `badge-red`/`badge-purple` existed), so a degraded instance silently
+      rendered unstyled — added the missing class. **Verified end-to-end
+      against a real running stack:** started xephon-admin's backend
+      (against a real Postgres) and frontend, registered a real Keycloak
+      test user with the `xephon:admin` role, logged in through an actual
+      browser (Playwright), created an Instance with its `cms_url` pointed
+      at the real, already-running xephon-cms dev server and its `erp_url`
+      pointed at an unreachable port, waited a full 30 s poll cycle, and
+      confirmed in the UI: CMS genuinely resolved to "up" (6 ms latency),
+      ERP genuinely resolved to "down", and the instance's overall badge
+      showed "degraded" — proving the poller, the persisted snapshot, the
+      route, and the frontend all agree end-to-end, not just against
+      mocked unit tests.
 
 ### Instances dashboard (frontend)
 - [x] **Done (2026-07-28):** `InstancesPage.tsx` — list/create/edit/delete
@@ -83,9 +132,11 @@ all deployed Xephon service instances.
       Phase 3's container log streaming (unbuilt) and "Members" isn't a
       concept that exists on `Instance` at all yet; building a detail
       page around two not-yet-real features would mean inventing scope
-      rather than implementing what's actually decided. Health status is
-      shown as whatever's stored, not live-polled — see "Health
-      monitoring" above, still unstarted.
+      rather than implementing what's actually decided. Health status was
+      shown as whatever's stored, not live-polled, when this bullet was
+      first written — since fixed, see "Health monitoring" above (now
+      done): the badge reflects the real poller and expands to a
+      per-service breakdown.
 
 ---
 

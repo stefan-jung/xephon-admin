@@ -17,11 +17,15 @@ class Instance(Base):
     of services that exist (cms/pm/pim/...) for role assignment purposes;
     `Instance` is one actual deployment, with its own URL per service.
 
-    health_status is a plain, externally-set field here -- the background
-    job that would actively poll each registered service's `/health/live`
-    and keep it current is a separate, larger piece of Phase 2 (those
-    endpoints don't exist on the other services yet) and isn't attempted
-    in this pass.
+    `health` is the per-service snapshot a background job
+    (app/services/health_poller.py) keeps current by polling each
+    configured service URL's `/health/live` every 30s -- keyed by service
+    name ("cms"/"pm"/"pim"/"erp"/"ai"), each entry
+    {status, checked_at, latency_ms, streak}. `health_status` is the
+    derived overall status ("up" all configured services responding,
+    "down" all unreachable, "degraded" a mix, "unknown" nothing
+    configured/polled yet) -- also settable directly via PATCH for manual
+    overrides, same as before this existed.
     """
 
     __tablename__ = "instances"
@@ -34,6 +38,7 @@ class Instance(Base):
     base_url: Mapped[str] = mapped_column(String(255), default="")
     enabled_services: Mapped[list] = mapped_column(JSONB, default=list)
     health_status: Mapped[str] = mapped_column(String(32), default="unknown")
+    health: Mapped[dict] = mapped_column(JSONB, default=dict)
 
     # Per-instance service record: where this specific deployment's own
     # services live, distinct from `base_url` (the instance's own address).

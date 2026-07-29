@@ -24,6 +24,13 @@ export interface Service {
   updated_at: string;
 }
 
+export interface ServiceHealthEntry {
+  status: "up" | "down";
+  checked_at: string;
+  latency_ms: number | null;
+  streak: number;
+}
+
 export interface Instance {
   id: string;
   name: string;
@@ -31,6 +38,7 @@ export interface Instance {
   base_url: string;
   enabled_services: string[];
   health_status: string;
+  health: Record<string, ServiceHealthEntry>;
   cms_url: string | null;
   pm_url: string | null;
   pim_url: string | null;

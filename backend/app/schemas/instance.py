@@ -9,6 +9,13 @@ from pydantic import BaseModel
 InstanceType = Literal["saas", "private", "enterprise"]
 
 
+class ServiceHealthEntry(BaseModel):
+    status: Literal["up", "down"]
+    checked_at: datetime
+    latency_ms: float | None
+    streak: int
+
+
 class InstanceCreate(BaseModel):
     name: str
     type: InstanceType
@@ -42,6 +49,7 @@ class InstanceRead(BaseModel):
     base_url: str
     enabled_services: list[str]
     health_status: str
+    health: dict[str, ServiceHealthEntry]
     cms_url: str | None
     pm_url: str | None
     pim_url: str | None
@@ -51,3 +59,9 @@ class InstanceRead(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class InstanceHealthRead(BaseModel):
+    instance_id: uuid.UUID
+    health_status: str
+    services: dict[str, ServiceHealthEntry]

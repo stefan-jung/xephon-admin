@@ -10,7 +10,7 @@ from app.core.auth import CurrentUser
 from app.db.session import get_db
 from app.models.audit_log import AuditLog
 from app.models.instance import Instance
-from app.schemas.instance import InstanceCreate, InstanceRead, InstanceUpdate
+from app.schemas.instance import InstanceCreate, InstanceHealthRead, InstanceRead, InstanceUpdate
 
 router = APIRouter(prefix="/instances", tags=["instances"])
 
@@ -67,6 +67,22 @@ async def get_instance(
     if not instance:
         raise HTTPException(status_code=404, detail="Instance not found")
     return instance
+
+
+@router.get("/{instance_id}/health", response_model=InstanceHealthRead)
+async def get_instance_health(
+    instance_id: uuid.UUID,
+    current_user: CurrentUser,
+    db: AsyncSession = Depends(get_db),
+) -> InstanceHealthRead:
+    instance = await db.get(Instance, instance_id)
+    if not instance:
+        raise HTTPException(status_code=404, detail="Instance not found")
+    return InstanceHealthRead(
+        instance_id=instance.id,
+        health_status=instance.health_status,
+        services=instance.health,
+    )
 
 
 @router.patch("/{instance_id}", response_model=InstanceRead)
